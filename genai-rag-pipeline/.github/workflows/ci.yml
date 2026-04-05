@@ -1,0 +1,102 @@
+name: RAG Pipeline CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install test dependencies
+        run: pip install pytest pytest-cov moto[dynamodb,s3] boto3 langchain-core pydantic
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short --cov=ingestion --cov=embeddings --cov=retrieval --cov=generation --cov-report=xml
+      - uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+
+  lint:
+    name: Lint + Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff black
+      - run: ruff check .
+      - run: black --check .
+
+  cdk-synth:
+    name: CDK Synth
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install -g aws-cdk && pip install aws-cdk-lib constructs
+      - name: CDK Synth
+        run: cd cdk && cdk synth --all --context stage=dev --context account=000000000000
+        env:
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+
+  deploy:
+    name: Deploy to Dev
+    needs: cdk-synth
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: npm install -g aws-cdk && pip install -r requirements.txt
+      - name: CDK Deploy
+        run: cd cdk && cdk deploy --all --context stage=dev --context account=${{ secrets.AWS_ACCOUNT_ID }} --require-approval never
+
+  evaluate:
+    name: RAGAS Eval (on schedule)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: pip install -r requirements.txt
+      - run: python evaluation/run_ragas.py --dataset evaluation/test_dataset.json --output evaluation/results.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ragas-results
+          path: evaluation/results.json

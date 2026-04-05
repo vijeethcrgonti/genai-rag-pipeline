@@ -1,0 +1,37 @@
+[
+  {
+    "question": "What is the data retention policy for customer records?",
+    "ground_truth": "Customer records must be retained for 7 years in accordance with financial compliance regulations.",
+    "ground_truth_context": [
+      "Per Section 4.2 of the Data Governance Policy, all customer financial records shall be retained for a minimum period of 7 years from the date of the last transaction, in compliance with SOX and applicable state regulations."
+    ]
+  },
+  {
+    "question": "How are PII fields handled in the data warehouse?",
+    "ground_truth": "PII fields are masked using SHA-256 hashing before storage in the data warehouse.",
+    "ground_truth_context": [
+      "All personally identifiable information (PII), including customer names, email addresses, and phone numbers, must be obfuscated prior to ingestion into the data warehouse. The approved method is SHA-256 cryptographic hashing applied at the ETL layer."
+    ]
+  },
+  {
+    "question": "What SLA applies to the nightly ETL pipeline?",
+    "ground_truth": "The nightly ETL pipeline must complete by 6:00 AM local time with a 99.5% monthly uptime SLA.",
+    "ground_truth_context": [
+      "The data engineering team is responsible for ensuring the nightly batch ETL process completes no later than 06:00 AM local datacenter time. The agreed Service Level Agreement (SLA) requires 99.5% monthly completion rate."
+    ]
+  },
+  {
+    "question": "Which cloud provider is used for the primary data lake?",
+    "ground_truth": "Amazon Web Services (AWS) with S3 as the primary data lake storage layer.",
+    "ground_truth_context": [
+      "The organization's primary data lake is hosted on Amazon Web Services. Raw and processed data are stored in Amazon S3 buckets organized by data domain and ingestion date."
+    ]
+  },
+  {
+    "question": "What is the process for requesting access to production data?",
+    "ground_truth": "Access requests must be submitted via ServiceNow, approved by the data owner and security team, and reviewed quarterly.",
+    "ground_truth_context": [
+      "To request access to production data assets, employees must submit a formal access request through ServiceNow. Requests require approval from the designated data owner and the Information Security team. All production data access is reviewed and recertified on a quarterly basis."
+    ]
+  }
+]
