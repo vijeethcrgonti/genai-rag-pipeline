@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install test dependencies
-        run: pip install pytest pytest-cov moto[dynamodb,s3] boto3 langchain-core langchain-aws langchain-community      	pydantic
+        run: pip install pytest pytest-cov moto[dynamodb,s3] boto3 langchain-core langchain-aws langchain-community 	pydantic opensearch-py
       - name: Run unit tests
         run: pytest tests/unit/ -v --tb=short --cov=ingestion --cov=embeddings --cov=retrieval --cov=generation --cov-report=xml
         env:
