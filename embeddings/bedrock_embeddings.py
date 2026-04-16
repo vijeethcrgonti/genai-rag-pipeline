@@ -17,7 +17,9 @@ from langchain_core.embeddings import Embeddings
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+bedrock = boto3.client(
+    "bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1")
+)
 dynamodb = boto3.resource("dynamodb")
 cloudwatch = boto3.client("cloudwatch")
 
@@ -70,21 +72,26 @@ class BedrockTitanEmbeddings(Embeddings):
             return
         try:
             import time as _time
+
             ttl = int(_time.time()) + (CACHE_TTL_DAYS * 86400)
-            self._cache_table.put_item(Item={
-                "content_hash": content_hash,
-                "embedding": json.dumps(embedding),
-                "ttl": ttl,
-            })
+            self._cache_table.put_item(
+                Item={
+                    "content_hash": content_hash,
+                    "embedding": json.dumps(embedding),
+                    "ttl": ttl,
+                }
+            )
         except Exception as e:
             logger.warning(f"Cache write failed: {e}")
 
     def _call_bedrock(self, text: str) -> list[float]:
-        body = json.dumps({
-            "inputText": text,
-            "dimensions": EMBEDDING_DIM,
-            "normalize": self.normalize,
-        })
+        body = json.dumps(
+            {
+                "inputText": text,
+                "dimensions": EMBEDDING_DIM,
+                "normalize": self.normalize,
+            }
+        )
 
         for attempt in range(3):
             try:
@@ -102,7 +109,7 @@ class BedrockTitanEmbeddings(Embeddings):
             except botocore.exceptions.ClientError as e:
                 code = e.response["Error"]["Code"]
                 if code == "ThrottlingException" and attempt < 2:
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning(f"Bedrock throttled, retrying in {wait}s")
                     time.sleep(wait)
                 else:
@@ -138,8 +145,8 @@ class BedrockTitanEmbeddings(Embeddings):
         # Embed uncached in batches of 25
         batch_size = 25
         for batch_start in range(0, len(uncached_texts), batch_size):
-            batch = uncached_texts[batch_start: batch_start + batch_size]
-            batch_indices = uncached_indices[batch_start: batch_start + batch_size]
+            batch = uncached_texts[batch_start : batch_start + batch_size]
+            batch_indices = uncached_indices[batch_start : batch_start + batch_size]
 
             for j, (text, orig_idx) in enumerate(zip(batch, batch_indices)):
                 embedding = self._call_bedrock(text)
@@ -162,11 +169,22 @@ class BedrockTitanEmbeddings(Embeddings):
             cloudwatch.put_metric_data(
                 Namespace="RAGPipeline/Embeddings",
                 MetricData=[
-                    {"MetricName": "CacheHitRate", "Value": self._hits / total, "Unit": "None"},
-                    {"MetricName": "TotalTokens", "Value": self._total_tokens, "Unit": "Count"},
-                    {"MetricName": "EstimatedCostUSD",
-                     "Value": (self._total_tokens / 1000) * BEDROCK_COST_PER_1K_TOKENS,
-                     "Unit": "None"},
+                    {
+                        "MetricName": "CacheHitRate",
+                        "Value": self._hits / total,
+                        "Unit": "None",
+                    },
+                    {
+                        "MetricName": "TotalTokens",
+                        "Value": self._total_tokens,
+                        "Unit": "Count",
+                    },
+                    {
+                        "MetricName": "EstimatedCostUSD",
+                        "Value": (self._total_tokens / 1000)
+                        * BEDROCK_COST_PER_1K_TOKENS,
+                        "Unit": "None",
+                    },
                 ],
             )
         except Exception as e:
@@ -180,5 +198,7 @@ class BedrockTitanEmbeddings(Embeddings):
             "cache_misses": self._misses,
             "hit_rate": round(self._hits / total, 3) if total > 0 else 0,
             "total_tokens_used": self._total_tokens,
-            "estimated_cost_usd": round((self._total_tokens / 1000) * BEDROCK_COST_PER_1K_TOKENS, 6),
+            "estimated_cost_usd": round(
+                (self._total_tokens / 1000) * BEDROCK_COST_PER_1K_TOKENS, 6
+            ),
         }

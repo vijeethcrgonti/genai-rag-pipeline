@@ -87,12 +87,14 @@ def evaluate_pipeline(dataset_path: str, output_path: str | None = None):
         except Exception as e:
             logger.error(f"Sample {i + 1} failed: {e}")
 
-    ragas_dataset = Dataset.from_dict({
-        "question": questions,
-        "answer": answers,
-        "contexts": contexts,
-        "ground_truth": ground_truths,
-    })
+    ragas_dataset = Dataset.from_dict(
+        {
+            "question": questions,
+            "answer": answers,
+            "contexts": contexts,
+            "ground_truth": ground_truths,
+        }
+    )
 
     logger.info("Running RAGAS evaluation...")
     results = evaluate(
@@ -143,7 +145,11 @@ def _emit_ragas_metrics(scores: dict):
         cloudwatch.put_metric_data(
             Namespace="RAGPipeline/Evaluation",
             MetricData=[
-                {"MetricName": metric.replace("_", "").title(), "Value": score, "Unit": "None"}
+                {
+                    "MetricName": metric.replace("_", "").title(),
+                    "Value": score,
+                    "Unit": "None",
+                }
                 for metric, score in scores.items()
             ],
         )

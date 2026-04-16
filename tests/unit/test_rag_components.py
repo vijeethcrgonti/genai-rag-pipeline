@@ -9,7 +9,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 
-
 class TestBedrockEmbeddings:
     @patch("embeddings.bedrock_embeddings.bedrock")
     @patch("embeddings.bedrock_embeddings.dynamodb")
@@ -19,13 +18,16 @@ class TestBedrockEmbeddings:
         mock_table.get_item.return_value = {}
 
         mock_response = MagicMock()
-        mock_response.read.return_value = json.dumps({
-            "embedding": [0.1] * 1536,
-            "inputTextTokenCount": 10,
-        }).encode()
+        mock_response.read.return_value = json.dumps(
+            {
+                "embedding": [0.1] * 1536,
+                "inputTextTokenCount": 10,
+            }
+        ).encode()
         mock_bedrock.invoke_model.return_value = {"body": mock_response}
 
         from embeddings.bedrock_embeddings import BedrockTitanEmbeddings
+
         client = BedrockTitanEmbeddings(cache_enabled=True)
         embedding = client.embed_query("test query")
 
@@ -43,6 +45,7 @@ class TestBedrockEmbeddings:
         }
 
         from embeddings.bedrock_embeddings import BedrockTitanEmbeddings
+
         client = BedrockTitanEmbeddings(cache_enabled=True)
         embedding = client.embed_query("cached query")
 
@@ -52,6 +55,7 @@ class TestBedrockEmbeddings:
 
     def test_content_hash_is_deterministic(self):
         from embeddings.bedrock_embeddings import BedrockTitanEmbeddings
+
         with patch("embeddings.bedrock_embeddings.dynamodb"):
             client = BedrockTitanEmbeddings(cache_enabled=False)
             h1 = client._content_hash("  Hello World  ")
@@ -67,11 +71,19 @@ class TestContextFormatting:
         docs = [
             Document(
                 page_content="Data retention is 7 years.",
-                metadata={"source_uri": "s3://bucket/policy.pdf", "chunk_index": 0, "rerank_score": 0.92},
+                metadata={
+                    "source_uri": "s3://bucket/policy.pdf",
+                    "chunk_index": 0,
+                    "rerank_score": 0.92,
+                },
             ),
             Document(
                 page_content="PII is masked with SHA-256.",
-                metadata={"source_uri": "s3://bucket/guide.pdf", "chunk_index": 2, "rerank_score": 0.85},
+                metadata={
+                    "source_uri": "s3://bucket/guide.pdf",
+                    "chunk_index": 2,
+                    "rerank_score": 0.85,
+                },
             ),
         ]
 
@@ -85,6 +97,7 @@ class TestContextFormatting:
 
     def test_empty_docs_returns_empty(self):
         from generation.rag_chain import format_context_with_citations
+
         context, citations = format_context_with_citations([])
         assert context == ""
         assert citations == []

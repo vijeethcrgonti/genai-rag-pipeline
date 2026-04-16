@@ -58,14 +58,22 @@ def format_context_with_citations(docs: list[Document]) -> tuple[str, list[dict]
         chunk_idx = doc.metadata.get("chunk_index", 0)
         score = doc.metadata.get("rerank_score") or doc.metadata.get("vector_score", 0)
 
-        context_parts.append(f"[Source {i}] (from: {source}, chunk: {chunk_idx})\n{doc.page_content}")
-        citations.append({
-            "citation_id": i,
-            "source_uri": source,
-            "chunk_index": chunk_idx,
-            "relevance_score": score,
-            "excerpt": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
-        })
+        context_parts.append(
+            f"[Source {i}] (from: {source}, chunk: {chunk_idx})\n{doc.page_content}"
+        )
+        citations.append(
+            {
+                "citation_id": i,
+                "source_uri": source,
+                "chunk_index": chunk_idx,
+                "relevance_score": score,
+                "excerpt": (
+                    doc.page_content[:200] + "..."
+                    if len(doc.page_content) > 200
+                    else doc.page_content
+                ),
+            }
+        )
 
     return "\n\n---\n\n".join(context_parts), citations
 
@@ -110,11 +118,13 @@ def save_conversation_history(session_id: str, history: list[dict]):
     table = dynamodb.Table(MEMORY_TABLE)
     try:
         ttl = int(time.time()) + (SESSION_TTL_HOURS * 3600)
-        table.put_item(Item={
-            "session_id": session_id,
-            "history": json.dumps(history),
-            "ttl": ttl,
-        })
+        table.put_item(
+            Item={
+                "session_id": session_id,
+                "history": json.dumps(history),
+                "ttl": ttl,
+            }
+        )
     except Exception as e:
         logger.warning(f"Failed to save conversation history: {e}")
 
@@ -150,25 +160,33 @@ def answer(
         else:
             messages.append(SystemMessage(content=turn["content"]))
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder(variable_name="history"),
-        ("human", HUMAN_PROMPT),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", HUMAN_PROMPT),
+        ]
+    )
 
     llm = get_streaming_llm() if stream else get_llm()
     chain = prompt | llm
 
     start = time.time()
-    response = chain.invoke({
-        "context": context,
-        "question": question,
-        "history": messages,
-    })
+    response = chain.invoke(
+        {
+            "context": context,
+            "question": question,
+            "history": messages,
+        }
+    )
     latency_ms = int((time.time() - start) * 1000)
 
     answer_text = response.content
-    tokens_used = response.usage_metadata.get("total_tokens", 0) if hasattr(response, "usage_metadata") else 0
+    tokens_used = (
+        response.usage_metadata.get("total_tokens", 0)
+        if hasattr(response, "usage_metadata")
+        else 0
+    )
 
     # Update conversation history
     history.append({"role": "human", "content": question})
@@ -192,7 +210,11 @@ def _emit_generation_metrics(latency_ms: int, tokens: int, docs_count: int):
         cloudwatch.put_metric_data(
             Namespace="RAGPipeline/Generation",
             MetricData=[
-                {"MetricName": "AnswerLatencyMs", "Value": latency_ms, "Unit": "Milliseconds"},
+                {
+                    "MetricName": "AnswerLatencyMs",
+                    "Value": latency_ms,
+                    "Unit": "Milliseconds",
+                },
                 {"MetricName": "TokensUsed", "Value": tokens, "Unit": "Count"},
                 {"MetricName": "DocsRetrieved", "Value": docs_count, "Unit": "Count"},
             ],

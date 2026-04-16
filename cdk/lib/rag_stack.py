@@ -22,9 +22,12 @@ class RAGStack(cdk.Stack):
         # ── DynamoDB: Conversation Memory ──────────────────────────────────────
 
         memory_table = dynamodb.Table(
-            self, "ConversationMemory",
+            self,
+            "ConversationMemory",
             table_name=f"rag-conversation-memory-{stage}",
-            partition_key=dynamodb.Attribute(name="session_id", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="session_id", type=dynamodb.AttributeType.STRING
+            ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             time_to_live_attribute="ttl",
@@ -33,9 +36,12 @@ class RAGStack(cdk.Stack):
         # ── DynamoDB: Embedding Cache ──────────────────────────────────────────
 
         embedding_cache = dynamodb.Table(
-            self, "EmbeddingCache",
+            self,
+            "EmbeddingCache",
             table_name=f"rag-embedding-cache-{stage}",
-            partition_key=dynamodb.Attribute(name="content_hash", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="content_hash", type=dynamodb.AttributeType.STRING
+            ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             time_to_live_attribute="ttl",
@@ -44,9 +50,12 @@ class RAGStack(cdk.Stack):
         # ── DynamoDB: Chunk Dedup ──────────────────────────────────────────────
 
         dedup_table = dynamodb.Table(
-            self, "ChunkDedup",
+            self,
+            "ChunkDedup",
             table_name=f"rag-chunk-dedup-{stage}",
-            partition_key=dynamodb.Attribute(name="content_hash", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(
+                name="content_hash", type=dynamodb.AttributeType.STRING
+            ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=cdk.RemovalPolicy.DESTROY,
         )
@@ -54,7 +63,8 @@ class RAGStack(cdk.Stack):
         # ── OpenSearch Serverless Collection ───────────────────────────────────
 
         collection = oss.CfnCollection(
-            self, "KnowledgeBaseCollection",
+            self,
+            "KnowledgeBaseCollection",
             name=f"rag-kb-{stage}",
             type="VECTORSEARCH",
             description="RAG pipeline knowledge base vector index",
@@ -63,25 +73,32 @@ class RAGStack(cdk.Stack):
         # ── Lambda IAM Role ────────────────────────────────────────────────────
 
         lambda_role = iam.Role(
-            self, "LambdaRole",
+            self,
+            "LambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole"),
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole"
+                ),
             ],
         )
 
-        lambda_role.add_to_policy(iam.PolicyStatement(
-            actions=[
-                "bedrock:InvokeModel",
-                "bedrock:InvokeModelWithResponseStream",
-            ],
-            resources=["arn:aws:bedrock:*::foundation-model/*"],
-        ))
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                ],
+                resources=["arn:aws:bedrock:*::foundation-model/*"],
+            )
+        )
 
-        lambda_role.add_to_policy(iam.PolicyStatement(
-            actions=["aoss:APIAccessAll"],
-            resources=[collection.attr_arn],
-        ))
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["aoss:APIAccessAll"],
+                resources=[collection.attr_arn],
+            )
+        )
 
         for table in [memory_table, embedding_cache, dedup_table]:
             table.grant_read_write_data(lambda_role)
@@ -89,7 +106,8 @@ class RAGStack(cdk.Stack):
         # ── Lambda Function (containerized) ───────────────────────────────────
 
         api_fn = lambda_.DockerImageFunction(
-            self, "RAGApiFunction",
+            self,
+            "RAGApiFunction",
             function_name=f"rag-api-{stage}",
             code=lambda_.DockerImageCode.from_image_asset(".."),
             role=lambda_role,
@@ -109,7 +127,8 @@ class RAGStack(cdk.Stack):
         # ── API Gateway ────────────────────────────────────────────────────────
 
         api = apigw.RestApi(
-            self, "RAGAPI",
+            self,
+            "RAGAPI",
             rest_api_name=f"rag-api-{stage}",
             description="GenAI RAG Pipeline API",
             default_cors_preflight_options=apigw.CorsOptions(
@@ -135,5 +154,7 @@ class RAGStack(cdk.Stack):
         # ── Outputs ────────────────────────────────────────────────────────────
 
         cdk.CfnOutput(self, "APIEndpoint", value=api.url)
-        cdk.CfnOutput(self, "OpenSearchEndpoint", value=collection.attr_collection_endpoint)
+        cdk.CfnOutput(
+            self, "OpenSearchEndpoint", value=collection.attr_collection_endpoint
+        )
         cdk.CfnOutput(self, "LambdaFunctionName", value=api_fn.function_name)

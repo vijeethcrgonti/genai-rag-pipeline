@@ -75,6 +75,7 @@ def load_document(local_path: Path, source_uri: str) -> list[Document]:
         loader = UnstructuredMarkdownLoader(str(local_path))
     elif ext == ".txt":
         from langchain_community.document_loaders import TextLoader
+
         loader = TextLoader(str(local_path))
     else:
         raise ValueError(f"Unsupported file type: {ext}")
@@ -101,11 +102,13 @@ def is_duplicate(content_hash: str) -> bool:
 
 def register_chunk(content_hash: str, chunk_id: str, source_uri: str):
     table = dynamodb.Table(DEDUP_TABLE)
-    table.put_item(Item={
-        "content_hash": content_hash,
-        "chunk_id": chunk_id,
-        "source_uri": source_uri,
-    })
+    table.put_item(
+        Item={
+            "content_hash": content_hash,
+            "chunk_id": chunk_id,
+            "source_uri": source_uri,
+        }
+    )
 
 
 def process_s3_source(bucket: str, prefix: str) -> Iterator[ChunkRecord]:
@@ -131,7 +134,9 @@ def process_s3_source(bucket: str, prefix: str) -> Iterator[ChunkRecord]:
                 chunks = chunk_documents(docs)
 
                 for i, chunk in enumerate(chunks):
-                    content_hash = hashlib.sha256(chunk.page_content.encode()).hexdigest()
+                    content_hash = hashlib.sha256(
+                        chunk.page_content.encode()
+                    ).hexdigest()
                     chunk_id = f"{content_hash[:12]}-{i:04d}"
 
                     if is_duplicate(content_hash):

@@ -17,7 +17,9 @@ from vectorstore.opensearch_store import hybrid_search
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-bedrock = boto3.client("bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+bedrock = boto3.client(
+    "bedrock-runtime", region_name=os.environ.get("AWS_REGION", "us-east-1")
+)
 
 COHERE_RERANK_MODEL_ID = "cohere.rerank-english-v3:0"
 TOP_K_RETRIEVE = int(os.environ.get("TOP_K_RETRIEVE", 10))
@@ -35,12 +37,14 @@ def rerank_with_cohere(query: str, candidates: list[dict]) -> list[dict]:
 
     documents = [c["doc"]["text"] for c in candidates]
 
-    body = json.dumps({
-        "query": query,
-        "documents": documents,
-        "top_n": TOP_K_RERANK,
-        "return_documents": False,
-    })
+    body = json.dumps(
+        {
+            "query": query,
+            "documents": documents,
+            "top_n": TOP_K_RERANK,
+            "return_documents": False,
+        }
+    )
 
     try:
         resp = bedrock.invoke_model(
@@ -53,10 +57,12 @@ def rerank_with_cohere(query: str, candidates: list[dict]) -> list[dict]:
         reranked = []
         for item in result["results"]:
             orig = candidates[item["index"]]
-            reranked.append({
-                **orig,
-                "rerank_score": item["relevance_score"],
-            })
+            reranked.append(
+                {
+                    **orig,
+                    "rerank_score": item["relevance_score"],
+                }
+            )
         logger.info(f"Reranked {len(candidates)} → {len(reranked)} candidates")
         return reranked
 

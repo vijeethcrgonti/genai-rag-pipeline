@@ -113,16 +113,20 @@ def upsert_chunks(chunks: list[dict], embeddings: BedrockTitanEmbeddings) -> int
     bulk_body = []
     for chunk_id, text, vector, metadata in zip(ids, texts, vectors, metadatas):
         bulk_body.append({"index": {"_index": INDEX_NAME, "_id": chunk_id}})
-        bulk_body.append({
-            "vector_field": vector,
-            "text": text,
-            **metadata,
-        })
+        bulk_body.append(
+            {
+                "vector_field": vector,
+                "text": text,
+                **metadata,
+            }
+        )
 
     if bulk_body:
         resp = client.bulk(body=bulk_body)
         errors = [item for item in resp["items"] if "error" in item.get("index", {})]
-        logger.info(f"Upserted {len(chunks) - len(errors)} chunks, {len(errors)} errors")
+        logger.info(
+            f"Upserted {len(chunks) - len(errors)} chunks, {len(errors)} errors"
+        )
         return len(chunks) - len(errors)
 
     return 0
@@ -215,5 +219,7 @@ def _reciprocal_rank_fusion(
         docs[doc_id] = hit
 
     ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-    return [{"doc": docs[doc_id]["_source"], "score": score, "id": doc_id}
-            for doc_id, score in ranked]
+    return [
+        {"doc": docs[doc_id]["_source"], "score": score, "id": doc_id}
+        for doc_id, score in ranked
+    ]

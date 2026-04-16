@@ -54,6 +54,7 @@ app.add_middleware(
 
 # ── Request / Response Models ──────────────────────────────────────────────────
 
+
 class QueryRequest(BaseModel):
     question: str = Field(..., min_length=3, max_length=2000)
     session_id: str = Field(default="default", max_length=64)
@@ -84,6 +85,7 @@ class IngestResponse(BaseModel):
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
+
 
 @app.get("/health")
 async def health():
