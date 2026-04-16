@@ -1,6 +1,6 @@
 import aws_cdk as cdk
-from lib.rag_stack import RagStack
+from lib.rag_stack import RAGStack
 
 app = cdk.App()
-RagStack(app, "RagStack")
+RAGStack(app, "RAGStack")
 app.synth()
