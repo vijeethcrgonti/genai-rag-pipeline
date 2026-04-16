@@ -27,6 +27,7 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: testing
           AWS_SECRET_ACCESS_KEY: testing
+          OPENSEARCH_ENDPOINT: 			  https://localhost:9200
       - uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
