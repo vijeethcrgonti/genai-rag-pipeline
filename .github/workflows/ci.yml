@@ -20,9 +20,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install test dependencies
-        run: pip install pytest pytest-cov moto[dynamodb,s3] boto3 langchain-core pydantic
+        run: pip install pytest pytest-cov moto[dynamodb,s3] boto3 langchain-core langchain-aws langchain-community      	pydantic
       - name: Run unit tests
         run: pytest tests/unit/ -v --tb=short --cov=ingestion --cov=embeddings --cov=retrieval --cov=generation --cov-report=xml
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
       - uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
