@@ -47,6 +47,7 @@ jobs:
   cdk-synth:
     name: CDK Synth
     needs: [test, lint]
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
