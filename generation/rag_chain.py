@@ -9,11 +9,8 @@ import json
 import logging
 import os
 import time
-from typing import Generator
 
 import boto3
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationSummaryBufferMemory
 from langchain_aws import ChatBedrock
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, SystemMessage

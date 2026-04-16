@@ -8,7 +8,6 @@ import aws_cdk as cdk
 from aws_cdk import (
     aws_apigateway as apigw,
     aws_dynamodb as dynamodb,
-    aws_ecr_assets as ecr_assets,
     aws_iam as iam,
     aws_lambda as lambda_,
     aws_opensearchserverless as oss,

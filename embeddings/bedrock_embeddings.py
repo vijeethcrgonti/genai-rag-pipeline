@@ -4,13 +4,11 @@ AWS Bedrock Titan Embeddings v2 client with DynamoDB caching.
 Supports async batch embedding with retry, cost tracking, and cache hit metrics.
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import os
 import time
-from typing import Any
 
 import boto3
 import botocore

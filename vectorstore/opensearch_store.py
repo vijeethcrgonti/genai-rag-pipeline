@@ -5,7 +5,6 @@ Handles index creation (HNSW), document upsert, hybrid search (dense + BM25),
 and metadata filtering. Uses AWS4Auth for Serverless auth.
 """
 
-import json
 import logging
 import os
 from typing import Any

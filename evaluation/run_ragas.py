@@ -8,12 +8,9 @@ Requires a ground truth test dataset (JSON).
 import argparse
 import json
 import logging
-import os
 from datetime import datetime
-from pathlib import Path
 
 import boto3
-import pandas as pd
 from datasets import Dataset
 from langchain_aws import ChatBedrock
 from ragas import evaluate
@@ -25,7 +22,7 @@ from ragas.metrics import (
 )
 
 from embeddings.bedrock_embeddings import BedrockTitanEmbeddings
-from generation.rag_chain import answer, format_context_with_citations
+from generation.rag_chain import answer
 from retrieval.retriever import retrieve
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

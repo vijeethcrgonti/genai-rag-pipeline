@@ -9,8 +9,6 @@ import logging
 import os
 
 import boto3
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain_core.documents import Document
 
 from embeddings.bedrock_embeddings import BedrockTitanEmbeddings

@@ -9,12 +9,10 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
-from typing import Any
 
 import boto3
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from mangum import Mangum
 from pydantic import BaseModel, Field
 
