@@ -2,5 +2,6 @@ import aws_cdk as cdk
 from lib.rag_stack import RAGStack
 
 app = cdk.App()
-RAGStack(app, "RAGStack")
+stage = app.node.try_get_context("stage") or "dev"
+RAGStack(app, "RAGStack", stage=stage)
 app.synth()
